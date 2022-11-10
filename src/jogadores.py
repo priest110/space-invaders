@@ -1,7 +1,7 @@
 import pygame
 
-img_jogador = pygame.image.load('nave.png')
-img_alien = pygame.image.load('alien.png')
+img_jogador = pygame.image.load('./data/nave.png')
+img_alien = pygame.image.load('./data/alien.png')
 
 
 # Função que desenha o jogador/a nave
