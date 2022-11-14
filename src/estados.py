@@ -12,8 +12,7 @@ def bala_em_movimento(x, y, screen):
 
 # Estado em que ocorre uma verificação se bala e alien colidem
 def colisao(alienX, alienY, balaX, balaY):
-    distancia = math.sqrt(math.pow(alienX - balaX, 2) + math.pow(alienY - balaY, 2))
-    if distancia < 20:  # 27 px
+    if alienY <= balaY <= alienY + 32 and alienX + 4 >= balaX >= alienX - 40:
         return True
     else:
         return False

@@ -1,4 +1,4 @@
-import random
+# coding=utf-8
 
 import pygame
 from pygame.locals import *
@@ -8,26 +8,25 @@ from src import jogadores, estados
 
 img_explosao = pygame.image.load('./data/explosion.png')
 
-# Inicializa o pygame
+# Constrói a GUI
 pygame.init()
 
 # ATRIBUIÇÕES INICIAIS
 
 # Janela, background, título e ícone
+screen = pygame.display.set_mode(size=(800, 600))
 back = pygame.image.load('./data/background.jpg')
 pygame.display.set_caption("Space Invaders")
 icone = pygame.image.load('./data/game.png')
 pygame.display.set_icon(icone)
-screen = pygame.display.set_mode(size=(800, 600))
 
 # Jogadores
-jogadorX = 470
-jogadorY = 500
-jogadorX_change = 0
-alienX = []
-alienY = []
-alienX_change = []
-alienY_change = []
+jogador = {
+    "coordX": 470,
+    "coordY": 500,
+    "changeX": 20
+}
+aliens = []
 
 # Bala
 balaX = 0
@@ -42,48 +41,29 @@ explosaoY = 0
 explosao_estado = 0  # 0 caso ainda não tenha acontecido, 1 caso tenha acontecido
 
 # Níveis do jogo
-niveis = [30, 40, 50, 51]  # 4 níveis com os aliens respetivos
-nivel_atual = 0
-aliens_vivos = niveis[nivel_atual]
-for n in niveis:
-    auxX = []
-    auxY = []
-    coordX = 200      # coordenada X onde surge o primeiro alien
-    coordY = 100 - 40 * nivel_atual     # coordenada Y onde surge o primeiro alien da coordenada x
-    auxX_change = []
-    auxY_change = []
-    for i in range(n):
-        if i < 30:
-            auxX.append(coordX)
-            auxY.append(coordY)
-            auxX_change.append(0.1)
-            auxY_change.append(40)
-        elif i < 40:
-            auxX.append(coordX)
-            auxY.append(coordY)
-            auxX_change.append(0.1)
-            auxY_change.append(40)
-        elif i < 50:
-            auxX.append(coordX)
-            auxY.append(coordY)
-            auxX_change.append(0.1)
-            auxY_change.append(40)
-        else:
-            auxX.append(coordX)
-            auxY.append(coordY)
-            auxX_change.append(0.1)
-            auxY_change.append(40)
+niveis = [20, 30, 40, 41]           # 4 níveis com os aliens respetivos
+nivel_atual = 0                     # inicialmente é o 0
+aliens_vivos = niveis[nivel_atual]  # inicialmente é 30, correspondente ao nível inicial
 
+for n in niveis:
+    coordX = 200                            # coordenada X onde surge o primeiro alien
+    coordY = 100 - 40 * niveis.index(n)     # coordenada Y onde surge o primeiro alien da coordenada x
+    aliens_aux = []
+    for i in range(n):
+        alien = {
+            "coordX": coordX,
+            "coordY": coordY,
+            "changeX": 0.1 if i < 40 else 50 if i < 50 else 60,
+            "changeY": 40 if i < 40 else 0,
+            "type": "red" if i < 20 else "yellow" if i < 30 else "green" if i < 40 else "extra"
+        }
+        aliens_aux.append(alien)
         if coordX < 740:
             coordX += 60
         else:
             coordX = 200
             coordY += 40
-
-    alienX.append(auxX)
-    alienY.append(auxY)
-    alienX_change.append(auxX_change)
-    alienY_change.append(auxY_change)
+    aliens.append(aliens_aux)
 
 # COMEÇO DO JOGO
 
@@ -99,26 +79,26 @@ while running:
     for evento in pygame.event.get():
         if evento.type == QUIT:
             running = False
-        if evento.type == KEYDOWN:  # Pressionar uma tecla
-            if evento.key == pygame.K_LEFT:  # Pressionar a seta esquerda
-                jogadorX_change = -1
-            if evento.key == pygame.K_RIGHT:  # Pressionar a seta direita
-                jogadorX_change = 1
-            if evento.key == pygame.K_SPACE:  # Pressionar espaço
+        if evento.type == KEYDOWN:                                                # Pressionar uma tecla
+            if evento.key == pygame.K_LEFT:                                         # Pressionar a seta esquerda
+                jogador["changeX"] = -1
+            if evento.key == pygame.K_RIGHT:                                        # Pressionar a seta direita
+                jogador["changeX"] = 1
+            if evento.key == pygame.K_SPACE:                                        # Pressionar espaço
                 if bala_estado == 0:
-                    balaX = jogadorX  # Pega na coordenadaX da nave
+                    balaX = jogador["coordX"]  # Pega na coordenadaX da nave
                     balaY = 500
                     bala_estado = estados.bala_em_movimento(balaX, balaY, screen)
-        if evento.type == KEYUP:  # Deixar de pressionar uma tecla
+        if evento.type == KEYUP:                                                  # Deixar de pressionar uma tecla
             if evento.key == pygame.K_LEFT or evento.key == pygame.K_RIGHT:
-                jogadorX_change = 0  # Para imobilizar a nave
+                jogador["changeX"] = 0   # Para imobilizar a nave
 
     # Verifica se o jogador pode sair das bordas
-    jogadorX += jogadorX_change
-    if jogadorX <= 0:
-        jogadorX = 0
-    elif jogadorX >= 736:
-        jogadorX = 736
+    jogador["coordX"] += jogador["changeX"]
+    if jogador["coordX"] <= 0:
+        jogador["coordX"] = 0
+    elif jogador["coordX"] >= 736:
+        jogador["coordX"] = 736
 
     # Verifica o movimento de cada alien
     #   - Saída das bordas
@@ -126,37 +106,33 @@ while running:
     #   - Game over
     i = 0
     while i < aliens_vivos:
-        alienX[nivel_atual][i] += alienX_change[nivel_atual][i]
-        if alienX[nivel_atual][i] <= 0:
-            for j in range(niveis[nivel_atual]):
-                alienX_change[nivel_atual][j] = 0.1
-                alienY[nivel_atual][j] += alienY_change[nivel_atual][i]
-        elif alienX[nivel_atual][i] >= 760:
-            for j in range(niveis[nivel_atual]):
-                alienX_change[nivel_atual][j] = -0.1
-                alienY[nivel_atual][j] += alienY_change[nivel_atual][i]
+        aliens[nivel_atual][i]["coordX"] += aliens[nivel_atual][i]["changeX"]
+        if 760 <= aliens[nivel_atual][i]["coordX"] or aliens[nivel_atual][i]["coordX"] <= 0:
+            for j in range(aliens_vivos):
+                aliens[nivel_atual][j]["changeX"] = -aliens[nivel_atual][j]["changeX"]
+                aliens[nivel_atual][j]["coordY"] += aliens[nivel_atual][i]["changeY"]
 
-        colisao = estados.colisao(alienX[nivel_atual][i], alienY[nivel_atual][i], balaX, balaY)
+        colisao = estados.colisao(aliens[nivel_atual][i]["coordX"], aliens[nivel_atual][i]["coordY"], balaX, balaY)
         if colisao:
             bala_estado = 0
             balaY = 700
             score += 1
-            explosaoX = alienX[nivel_atual][i]
-            explosaoY = alienY[nivel_atual][i]
-            alienX[nivel_atual].pop(i)
-            alienY[nivel_atual].pop(i)
-            alienX_change[nivel_atual].pop(i)
-            alienY_change[nivel_atual].pop(i)
+            explosaoX = aliens[nivel_atual][i]["coordX"]
+            explosaoY = aliens[nivel_atual][i]["coordY"]
+            aliens[nivel_atual].pop(i)
             aliens_vivos -= 1
+            if aliens_vivos == 0:
+                nivel_atual += 1
+                aliens_vivos = niveis[nivel_atual]
             tempo_explosao = time.time()
             print("\nQue fixe, mataste um gajo.\nScore = ", score)
             explosao = True
-
-        if alienY[nivel_atual][i] > 480:
+        elif aliens[nivel_atual][i]["coordY"] > 480:
             running = False
-
-        jogadores.desenha_alien(alienX[nivel_atual][i], alienY[nivel_atual][i], screen)
-        i += 1
+            break
+        else:
+            jogadores.desenha_alien(aliens[nivel_atual][i]["coordX"], aliens[nivel_atual][i]["coordY"], aliens[nivel_atual][i]["type"], screen)
+            i += 1
 
     # Verifica se a bala pode sair das bordas
     if balaY <= 0:
@@ -175,7 +151,7 @@ while running:
         else:
             explosao = False  # Cancelar a explosão
 
-    jogadores.desenha_jogador(jogadorX, jogadorY, screen)
+    jogadores.desenha_jogador(jogador["coordX"], jogador["coordY"], screen)
     pygame.display.update()
 
 # FIM DO JOGO
