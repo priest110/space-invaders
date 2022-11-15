@@ -63,6 +63,8 @@ for n in niveis:
         else:
             coordX = 200
             coordY += 40
+    aliens_aux.reverse()
+    print(aliens_aux)
     aliens.append(aliens_aux)
 
 # COMEÇO DO JOGO
@@ -107,6 +109,7 @@ while running:
     i = 0
     while i < aliens_vivos:
         aliens[nivel_atual][i]["coordX"] += aliens[nivel_atual][i]["changeX"]
+
         if 760 <= aliens[nivel_atual][i]["coordX"] or aliens[nivel_atual][i]["coordX"] <= 0:
             for j in range(aliens_vivos):
                 aliens[nivel_atual][j]["changeX"] = -aliens[nivel_atual][j]["changeX"]
