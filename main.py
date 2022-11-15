@@ -4,9 +4,7 @@ import pygame
 from pygame.locals import *
 import time
 
-from src import jogadores, estados
-
-img_explosao = pygame.image.load('./data/explosion.png')
+from src import interface
 
 # Constrói a GUI
 pygame.init()
@@ -41,59 +39,74 @@ explosaoY = 0
 explosao_estado = 0  # 0 caso ainda não tenha acontecido, 1 caso tenha acontecido
 
 # Níveis do jogo
-niveis = [20, 30, 40, 41]           # 4 níveis com os aliens respetivos
-nivel_atual = 0                     # inicialmente é o 0
+niveis = [20, 30, 40, 41]  # 4 níveis com os aliens respetivos
+nivel_atual = 0  # inicialmente é o 0
 aliens_vivos = niveis[nivel_atual]  # inicialmente é 30, correspondente ao nível inicial
 
-for n in niveis:
-    coordX = 200                            # coordenada X onde surge o primeiro alien
-    coordY = 100 - 40 * niveis.index(n)     # coordenada Y onde surge o primeiro alien da coordenada x
-    aliens_aux = []
-    for i in range(n):
-        alien = {
-            "coordX": coordX,
-            "coordY": coordY,
-            "changeX": 0.1 if i < 40 else 50 if i < 50 else 60,
-            "changeY": 40 if i < 40 else 0,
-            "type": "red" if i < 20 else "yellow" if i < 30 else "green" if i < 40 else "extra"
-        }
-        aliens_aux.append(alien)
-        if coordX < 740:
-            coordX += 60
-        else:
-            coordX = 200
-            coordY += 40
-    aliens_aux.reverse()
-    print(aliens_aux)
-    aliens.append(aliens_aux)
+
+# Verificação de colisão entre bala e alien
+def existe_colisao(alienX, alienY, balaX, balaY):
+    if alienY <= balaY <= alienY + 32 and alienX + 4 >= balaX >= alienX - 40:
+        return True
+    else:
+        return False
+
+
+# Atribuição das coordenadas a todos os aliens dos respetivos níveis
+def coordenadas_aliens():
+    for n in niveis:
+        coordX = 200  # coordenada X onde surge o primeiro alien
+        coordY = 100 + 40 * niveis.index(n)  # coordenada Y onde surge o primeiro alien da coordenada x
+        aliens_aux = []
+        for i in range(n):
+            alien = {
+                "coordX": coordX,
+                "coordY": coordY,
+                "changeX": 0.1 if i < 30 else 0.3 if i < 40 else 0.5,
+                # A partir dos 3º nível (30 aliens >) a velocidadeno eixo x dos mesmos altera
+                "changeY": 40 if i < 30 else 0,
+                "type": "red" if i < 20 else "yellow" if i < 30 else "green" if i < 40 else "extra"
+                # O tipo de alien varia consoante o nível
+            }
+            aliens_aux.append(alien)
+            if coordX < 740:
+                coordX += 60
+            else:
+                coordX = 200
+                coordY -= 40
+        aliens.append(aliens_aux)
+
 
 # COMEÇO DO JOGO
 
 score = 0
+font = pygame.font.Font('./data/space_invaders.ttf', 32)
 running = True
+game_over = False
 colisao = False
 explosao = False
 tempo_explosao = time.time()
 
+coordenadas_aliens()
 while running:
     screen.fill((0, 0, 0))  # Cor do background (R, G, B)
     screen.blit(back, (0, 0))  # Img do background
     for evento in pygame.event.get():
         if evento.type == QUIT:
             running = False
-        if evento.type == KEYDOWN:                                                # Pressionar uma tecla
-            if evento.key == pygame.K_LEFT:                                         # Pressionar a seta esquerda
+        if evento.type == KEYDOWN:  # Pressionar uma tecla
+            if evento.key == pygame.K_LEFT:  # Pressionar a seta esquerda
                 jogador["changeX"] = -1
-            if evento.key == pygame.K_RIGHT:                                        # Pressionar a seta direita
+            if evento.key == pygame.K_RIGHT:  # Pressionar a seta direita
                 jogador["changeX"] = 1
-            if evento.key == pygame.K_SPACE:                                        # Pressionar espaço
+            if evento.key == pygame.K_SPACE:  # Pressionar espaço
                 if bala_estado == 0:
                     balaX = jogador["coordX"]  # Pega na coordenadaX da nave
                     balaY = 500
-                    bala_estado = estados.bala_em_movimento(balaX, balaY, screen)
-        if evento.type == KEYUP:                                                  # Deixar de pressionar uma tecla
+                    bala_estado = interface.desenha_bala(balaX, balaY, screen)
+        if evento.type == KEYUP:  # Deixar de pressionar uma tecla
             if evento.key == pygame.K_LEFT or evento.key == pygame.K_RIGHT:
-                jogador["changeX"] = 0   # Para imobilizar a nave
+                jogador["changeX"] = 0  # Para imobilizar a nave
 
     # Verifica se o jogador pode sair das bordas
     jogador["coordX"] += jogador["changeX"]
@@ -107,15 +120,20 @@ while running:
     #   - Colisão com bala
     #   - Game over
     i = 0
-    while i < aliens_vivos:
+    while i < aliens_vivos and not game_over:
         aliens[nivel_atual][i]["coordX"] += aliens[nivel_atual][i]["changeX"]
 
         if 760 <= aliens[nivel_atual][i]["coordX"] or aliens[nivel_atual][i]["coordX"] <= 0:
             for j in range(aliens_vivos):
-                aliens[nivel_atual][j]["changeX"] = -aliens[nivel_atual][j]["changeX"]
-                aliens[nivel_atual][j]["coordY"] += aliens[nivel_atual][i]["changeY"]
+                type_i = aliens[nivel_atual][i]["type"]
+                type_j = aliens[nivel_atual][j]["type"]
+                if (type_i in ["red", "yellow"] and type_j in ["red", "yellow"]) or (
+                        type_i in ["green"] and type_j in ["green"]) or (type_i in ["extra"] and type_j in ["extra"]):
+                    aliens[nivel_atual][j]["changeX"] = -aliens[nivel_atual][j]["changeX"]
+                if type_i in ["red", "yellow"] and type_j in ["red", "yellow"]:
+                    aliens[nivel_atual][j]["coordY"] += aliens[nivel_atual][j]["changeY"]
 
-        colisao = estados.colisao(aliens[nivel_atual][i]["coordX"], aliens[nivel_atual][i]["coordY"], balaX, balaY)
+        colisao = existe_colisao(aliens[nivel_atual][i]["coordX"], aliens[nivel_atual][i]["coordY"], balaX, balaY)
         if colisao:
             bala_estado = 0
             balaY = 700
@@ -126,15 +144,20 @@ while running:
             aliens_vivos -= 1
             if aliens_vivos == 0:
                 nivel_atual += 1
-                aliens_vivos = niveis[nivel_atual]
+                if nivel_atual < len(niveis):
+                    aliens_vivos = niveis[nivel_atual]
+                else:
+                    running = False
+                    game_over = True
             tempo_explosao = time.time()
             print("\nQue fixe, mataste um gajo.\nScore = ", score)
             explosao = True
         elif aliens[nivel_atual][i]["coordY"] > 480:
             running = False
-            break
+            game_over = True
         else:
-            jogadores.desenha_alien(aliens[nivel_atual][i]["coordX"], aliens[nivel_atual][i]["coordY"], aliens[nivel_atual][i]["type"], screen)
+            interface.desenha_alien(aliens[nivel_atual][i]["coordX"], aliens[nivel_atual][i]["coordY"],
+                                    aliens[nivel_atual][i]["type"], screen)
             i += 1
 
     # Verifica se a bala pode sair das bordas
@@ -144,17 +167,18 @@ while running:
 
     # Movimento da bala, após disparada
     if bala_estado == 1:
-        bala_estado = estados.bala_em_movimento(balaX, balaY, screen)
+        bala_estado = interface.desenha_bala(balaX, balaY, screen)
         balaY -= balaY_change
 
     # Verifica se houve colisão
     if explosao:
         if time.time() - tempo_explosao < 0.1:
-            screen.blit(img_explosao, (explosaoX, explosaoY))  # Desenhar a explosão
+            interface.desenha_explosao(explosaoX, explosaoY, screen)
         else:
             explosao = False  # Cancelar a explosão
 
-    jogadores.desenha_jogador(jogador["coordX"], jogador["coordY"], screen)
+    interface.desenha_jogador(jogador["coordX"], jogador["coordY"], screen)
+    interface.desenha_score(10, 10, score, screen, font)
     pygame.display.update()
 
 # FIM DO JOGO
