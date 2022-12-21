@@ -1,4 +1,4 @@
-# space-invaders
+# :space_invader: Space Invaders
 Space Invaders game using Pygame.
 
 Installation
