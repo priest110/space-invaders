@@ -1,0 +1,6 @@
+3/Maio/2023 - 2:59 :
+  Implemented:
+    - Menu de jogo, com opçao de clique ou uso das setas + enter_key para escolher entre as diversas opções.
+  
+  Updated:
+    - Imagem do final do jogo agora é centrada em funcao da resolucao estipulada. (No caso de querermos dar a opçao ao utilizador de mudar de resolucao esta continuará  centrada).
