@@ -12,11 +12,17 @@ pygame.init()
 # ATRIBUIÇÕES INICIAIS
 
 # Janela, background, título e ícone
-screen = pygame.display.set_mode(size=(800, 600))
+screen_width = 800 
+screen_height = 600
+screen = pygame.display.set_mode(size=(screen_width, screen_height))
 back = pygame.image.load('./data/background.jpg')
 pygame.display.set_caption("Space Invaders")
 icone = pygame.image.load('./data/game.png')
+icone_width, icone_height = icone.get_size()
+icone_pos_x = (screen_width-icone_width) / 2
+icone_pos_y = (screen_height-icone_height) / 2
 pygame.display.set_icon(icone)
+game_state = "menu"
 
 # Jogadores
 jogador = {
@@ -76,8 +82,82 @@ def coordenadas_aliens():
                 coordY -= 40
         aliens.append(aliens_aux)
 
+# Gerir os cliques do rato
+def handle_mouse_click(position):
+    global game_state
+
+    if game_state == "menu":
+        # Check if the click occurred on the "play" button
+        if 150 <= position[0] <= 350 and 250 <= position[1] <= 300:
+            game_state = "playing"
+            start_game()
+
+        # Check if the click occurred on the "quit" button
+        elif 150 <= position[0] <= 350 and 350 <= position[1] <= 400:
+            pygame.quit()
+            sys.exit()
 
 # COMEÇO DO JOGO
+
+# Codigo do menu
+def menu(screen):
+    font = pygame.font.Font('./data/space_invaders.ttf', 64)
+    title = font.render("Space Invaders", True, (255, 255, 255))
+    play_text = font.render("Play", True, (255, 255, 255))
+    quit_text = font.render("Quit", True, (255, 255, 255))
+
+    # Center the title and menu options
+    title_rect = title.get_rect(center=(screen.get_width() // 2, 100))
+    play_rect = play_text.get_rect(center=(screen.get_width() // 2, 300))
+    quit_rect = quit_text.get_rect(center=(screen.get_width() // 2, 400))
+
+    while True:
+    # Draw the title and menu options
+        screen.fill((0, 0, 0))
+        screen.blit(title, title_rect)
+        screen.blit(play_text, play_rect)
+        screen.blit(quit_text, quit_rect)
+
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                handle_mouse_click(pygame.mouse.get_pos())
+                # Check which option was selected
+                if play_rect.collidepoint(pygame.mouse.get_pos()):
+                    return True
+                elif quit_rect.collidepoint(pygame.mouse.get_pos()):
+                    pygame.quit()
+                    sys.exit()
+
+        
+
+            # Highlight the selected option
+            if play_rect.collidepoint(pygame.mouse.get_pos()):
+                play_text = font.render("Play", True, (255, 0, 0))
+            else:
+                play_text = font.render("Play", True, (255, 255, 255))
+
+            if quit_rect.collidepoint(pygame.mouse.get_pos()):
+                quit_text = font.render("Quit", True, (255, 0, 0))
+            else:
+                quit_text = font.render("Quit", True, (255, 255, 255))
+
+            pygame.display.update()
+
+
+
+# Inicialização do menu
+if not menu(screen):
+    pygame.quit()
+    sys.exit()
+
+# Loop do jogo
 
 score = 0
 font = pygame.font.Font('./data/space_invaders.ttf', 32)
@@ -187,5 +267,9 @@ running = True
 while running:
     print("Game over")
     screen.fill((0, 0, 0))  # Cor do background (R, G, B)
-    screen.blit(icone, (0, 0))  # Img do background
+    screen.blit(icone, (icone_pos_x, icone_pos_y))  # Img do background
     pygame.display.update()
+    time.sleep(5)
+    running = False
+    
+
